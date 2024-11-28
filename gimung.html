@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game</title>
+    <link rel="stylesheet" href="gimung.css">
+</head>
+<body>
+    <main class="container">
+        <div class="atasbar">
+            <div class="pointkiri">
+                <img class="block" src="images/orangkiribar.png" alt="" width="450px" >
+                <h1>
+                    action1 
+                </h1>
+                <h2>
+                    0
+                </h2>       
+            </div>
+
+            <div class="tengah">
+                <img src="images/resultpapan.png" alt="" width="300px">
+                <h1>
+                    acumalaka
+                </h1>
+            </div>
+
+            <div class="pointkanan">
+                <img class="block" src="images/orangkananbar.png" alt="" width="450px">
+                <h1>
+                    action2
+                </h1>
+                <h2>
+                    0
+                </h2>
+            </div>
+        </div>
+        <div class="bawah">
+
+        </div>
+        <h1>Game Batu-Gunting-Kertas Modifikasi</h1>
+        <div>
+            <p>Pemain 1: <input type="text" id="p1action" placeholder="Masukkan kode"></p>
+            <p>Pemain 2: <input type="text" id="p2action" placeholder="Masukkan kode"></p>
+            <button onclick="playGame()">Submit</button>
+            <button onclick="resetGame()">Reset Game</button>
+        </div>
+        <div>
+            <p>Peluru Pemain 1: <span id="p1bullets">0</span></p>
+            <p>Peluru Pemain 2: <span id="p2bullets">0</span></p>
+        </div>
+        <div>
+            <p>Aksi Pemain 1: <span id="p1actionDisplay">-</span></p>
+            <p>Aksi Pemain 2: <span id="p2actionDisplay">-</span></p>
+        </div>
+        <div>
+            <p id="result"></p>
+        </div>
+    </main>
+    <script>
+        let bullets = [0, 0]; // [p1Bullets, p2Bullets]
+
+        // Peta aksi untuk Player 1 dan Player 2
+        const player1Map = {
+            "cc": "reload",
+            "qa": "tembak1", "qs": "tembak2", "qd": "tembak3", "qz": "tembak4", "qx": "tembak5",
+            "wa": "tahan1", "ws": "tahan2", "wd": "tahan3", "wz": "tahan4", "wx": "tahan5"
+        };
+
+        const player2Map = {
+            "mm": "reload",
+            "ok": "tembak1", "ol": "tembak2", "o;": "tembak3", "om": "tembak4", "o,": "tembak5",
+            "pk": "tahan1", "pl": "tahan2", "p;": "tahan3", "p,": "tahan4", "p.": "tahan5"
+        };
+
+        function updateBulletsDisplay() {
+            document.getElementById('p1bullets').innerText = bullets[0];
+            document.getElementById('p2bullets').innerText = bullets[1];
+        }
+
+        function isValidAction(action) {
+            return action !== undefined; // Validasi dilakukan dengan peta
+        }
+
+        function playGame() {
+            const p1Code = document.getElementById('p1action').value.toLowerCase();
+            const p2Code = document.getElementById('p2action').value.toLowerCase();
+
+            // Terjemahkan kode ke aksi
+            const p1Action = player1Map[p1Code];
+            const p2Action = player2Map[p2Code];
+
+            // Validasi apakah input aksi valid
+            if (!isValidAction(p1Action) || !isValidAction(p2Action)) {
+                document.getElementById('result').innerText = "Salah satu input player tidak benar.";
+                updateActionDisplays("-", "-"); // Kosongkan tampilan aksi jika input salah
+                return; // Menghentikan eksekusi jika input tidak valid
+            }
+
+            // Validasi peluru
+            if (!checkBullets(bullets[0], p1Action, 1) || !checkBullets(bullets[1], p2Action, 2)) {
+                document.getElementById('result').innerText = "Ronde diulang karena peluru tidak cukup.";
+                updateActionDisplays("-", "-"); // Kosongkan tampilan aksi jika peluru tidak cukup
+                return; // Ronde diulang tanpa memproses aksi
+            }
+
+            let result = ""; // Variabel untuk menyimpan hasil
+            // Evaluasi aksi
+            if (p1Action.startsWith("tembak") && p2Action.startsWith("tembak")) {
+                const p1Tembak = parseInt(p1Action.slice(6));
+                const p2Tembak = parseInt(p2Action.slice(6));
+                if (p1Tembak > p2Tembak) result = "Player 1 Wins!";
+                else if (p1Tembak < p2Tembak) result = "Player 2 Wins!";
+                else result = "Draw!";
+            } else if (p1Action === "reload" && p2Action.startsWith("tembak")) {
+                result = "Player 2 Wins!";
+            } else if (p2Action === "reload" && p1Action.startsWith("tembak")) {
+                result = "Player 1 Wins!";
+            } else if (p1Action.startsWith("tembak") && p2Action.startsWith("tahan")) {
+                const p1Tembak = parseInt(p1Action.slice(6));
+                const p2Tahan = parseInt(p2Action.slice(5));
+                if (p1Tembak !== p2Tahan) result = "Player 1 Wins!";
+                else result = "Game continues...";
+            } else if (p2Action.startsWith("tembak") && p1Action.startsWith("tahan")) {
+                const p2Tembak = parseInt(p2Action.slice(6));
+                const p1Tahan = parseInt(p1Action.slice(5));
+                if (p2Tembak !== p1Tahan) result = "Player 2 Wins!";
+                else result = "Game continues...";
+            } else {
+                result = "Game continues...";
+            }
+
+            // Update peluru
+            if (p1Action === "reload") bullets[0]++;
+            if (p2Action === "reload") bullets[1]++;
+            if (p1Action.startsWith("tembak")) bullets[0] -= parseInt(p1Action.slice(6));
+            if (p2Action.startsWith("tembak")) bullets[1] -= parseInt(p2Action.slice(6));
+
+            // Perbarui tampilan jumlah peluru
+            updateBulletsDisplay();
+
+            // Tampilkan hasil dan aksi kedua pemain
+            document.getElementById('result').innerText = result;
+            updateActionDisplays(p1Action, p2Action);
+
+            // Reset peluru jika ada pemenang
+            if (result.includes("Wins")) {
+                bullets = [0, 0];
+                updateBulletsDisplay();
+            }
+        }
+
+        function updateActionDisplays(p1Action, p2Action) {
+            document.getElementById('p1actionDisplay').innerText = p1Action;
+            document.getElementById('p2actionDisplay').innerText = p2Action;
+        }
+
+        function checkBullets(playerBullets, action, playerNumber) {
+            if (action.startsWith("tembak")) {
+                const requiredBullets = parseInt(action.slice(6));
+                if (playerBullets < requiredBullets) {
+                    alert(`Peluru player ${playerNumber} tidak cukup! (peluru: ${playerBullets}, butuh: ${requiredBullets})`);
+                    return false; // Tidak cukup peluru
+                }
+            }
+            return true; // Peluru cukup atau bukan aksi 'tembak'
+        }
+
+        function resetGame() {
+            // Reset peluru kedua pemain
+            bullets = [0, 0];
+            updateBulletsDisplay();
+
+            // Kosongkan input aksi
+            document.getElementById('p1action').value = '';
+            document.getElementById('p2action').value = '';
+
+            // Kosongkan hasil permainan dan aksi
+            document.getElementById('result').innerText = '';
+            updateActionDisplays("-", "-");
+
+            alert("Game telah di-reset!");
+        }
+    </script>
+</body>
+</html>
